@@ -1032,13 +1032,16 @@ function rdAudUrl(){var p=function(n){return (n<10?'0':'')+n};return 'https://eb
 function rdAudStart(){
  if(!rdAudOk())return;var keep=rd.ttsResume;rd.ttsTok++;try{speechSynthesis.cancel()}catch(e){}
  if(rd.aud){try{rd.aud.pause()}catch(e){}}
- var url=rdAudUrl(),a=new Audio(),ok=false,n=$('#rdvoicewarn');if(n)n.remove();
+ var url=rdAudUrl(),a=rd.audEl||(rd.audEl=new Audio()),ok=false,n=$('#rdvoicewarn');if(n)n.remove();
  rd.aud=a;rd.tts.mode='aud';rd.tts.on=true;rd.tts.paused=false;rd.tts.i=-1;rdWake(true);rdTtsBar();
  var fail=function(){if(rd.aud!==a)return;rdTtsStop();rdTtsMsg('<b>The recording would not play here.</b> Open it directly instead: <a href="'+url+'" target="_blank" rel="noopener">'+esc(BKN[rd.b])+' '+rd.c+' (recorded voice, MP3)</a>')};
  a.preload='auto';a.playbackRate=rd.tts.rate;
- a.addEventListener('playing',function(){ok=true;clearTimeout(rd.audT);rd.tts.paused=false;rdTtsBar()});
- a.addEventListener('error',fail);
- a.addEventListener('ended',function(){if(rd.aud!==a)return;if(rd.tts.auto&&rdStep(1)){rd.ttsResume=true;rd.tts.mode='aud';rdGo(1)}else rdTtsStop()});
+ ['playing','error','ended'].forEach(function(t){if(a['_'+t])a.removeEventListener(t,a['_'+t])});
+ a._playing=function(){ok=true;clearTimeout(rd.audT);rd.tts.paused=false;rdTtsBar()};
+ a._error=fail;
+ a._ended=function(){if(rd.aud!==a)return;var b0=rd.b,c0=rd.c,nx=rdStep(1);rdMarkRead(b0,c0);if(nx){rdSavePos(rdTnOf(nx[0]),nx[0],nx[1],0);qput(RD_LAST,rdTnOf(nx[0]))}if(rd.tts.auto&&nx){rd.ttsResume=true;rd.tts.mode='aud';rdGo(1)}else rdTtsStop()};
+ a.addEventListener('playing',a._playing);a.addEventListener('error',a._error);a.addEventListener('ended',a._ended);
+ try{if('mediaSession' in navigator){navigator.mediaSession.metadata=new MediaMetadata({title:BKN[rd.b]+' '+rd.c,artist:'World English Bible',album:'Bible App'});navigator.mediaSession.setActionHandler('play',function(){if(rd.aud)rd.aud.play()});navigator.mediaSession.setActionHandler('pause',function(){if(rd.aud)rd.aud.pause()});navigator.mediaSession.setActionHandler('nexttrack',function(){if(rd.aud&&rdStep(1)){rd.ttsResume=true;rd.tts.mode='aud';rdGo(1)}});navigator.mediaSession.setActionHandler('previoustrack',function(){if(rd.aud&&rdStep(-1)){rd.ttsResume=true;rd.tts.mode='aud';rdGo(-1)}})}}catch(e){}
  rd.audT=setTimeout(function(){if(!ok)fail()},9000);
  a.src=url;var pr=a.play();if(pr&&pr.catch)pr.catch(function(){if(!ok)fail()})}
 /* ----- read aloud (device voices) ----- */
