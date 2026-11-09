@@ -1044,6 +1044,8 @@ function rdAudStart(){
 /* ----- read aloud (device voices) ----- */
 function rdLn(v){var m=/\(([^)]*)\)/.exec(v.langname);return m?m[1]:v.langname}
 function rdTtsOk(){return typeof window.speechSynthesis!=='undefined'&&typeof SpeechSynthesisUtterance!=='undefined'}
+function voiceScore(v){var n=v.name||'',x=0;if(/online.*natural|natural/i.test(n))x+=100;if(/neural/i.test(n))x+=90;if(/premium|enhanced|siri/i.test(n))x+=70;if(/google/i.test(n))x+=60;if(v.localService===false)x+=40;if(/\b(en[-_]?(US|GB|AU))\b/i.test(v.lang||''))x+=5;if(/espeak|compact/i.test(n))x-=50;return x}
+function voiceBest(vs){var b=null,bs=-1e9;vs.forEach(function(v){var c=voiceScore(v);if(c>bs){bs=c;b=v}});return b}
 function rdVoices(){try{return speechSynthesis.getVoices()||[]}catch(e){return []}}
 function rdVoicesFor(lang){return rdVoices().filter(function(v){return (v.lang||'').toLowerCase().replace('_','-').split('-')[0]===lang})}
 function rdVoicePick(){var L=rdVerOf(rd.ver).lang,vs=rdVoicesFor(L);if(!vs.length)return null;for(var i=0;i<vs.length;i++)if(vs[i].name===rd.tts.voice)return vs[i];return voiceBest(vs)||vs[0]}
