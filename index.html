@@ -1027,14 +1027,14 @@ function rdFmtSet(){qput(RD_FMT,rd.fmt);rdFmtApply()}
 
 /* ----- recorded voice (WEB New Testament, eBible.org, public domain) ----- */
 var RDAUDN=['Matthew','Mark','Luke','John','Acts','Romans','1Corinthians','2Corinthians','Galatians','Ephesians','Philippians','Colossians','1Thess','2Thess','1Timothy','2Timothy','Titus','Philemon','Hebrews','James','1Peter','2Peter','1John','2John','3John','Jude','Revelation'];
-function rdAudOk(){return false&&rd.ver==='web'&&rd.b>=39&&rd.b<=65&&typeof Audio!=='undefined'}
+function rdAudOk(){return rd.ver==='web'&&rd.b>=39&&rd.b<=65&&typeof Audio!=='undefined'}
 function rdAudUrl(){var p=function(n){return (n<10?'0':'')+n};return 'https://ebible.org/eng-web/mp3/'+p(rd.b-38)+'_'+p(rd.c)+'_'+RDAUDN[rd.b-39]+'.mp3'}
 function rdAudStart(){
  if(!rdAudOk())return;var keep=rd.ttsResume;rd.ttsTok++;try{speechSynthesis.cancel()}catch(e){}
  if(rd.aud){try{rd.aud.pause()}catch(e){}}
  var url=rdAudUrl(),a=new Audio(),ok=false,n=$('#rdvoicewarn');if(n)n.remove();
  rd.aud=a;rd.tts.mode='aud';rd.tts.on=true;rd.tts.paused=false;rd.tts.i=-1;rdWake(true);rdTtsBar();
- var fail=function(){if(rd.aud!==a)return;rdTtsStop();rdTtsMsg('<b>Your viewer would not play the recording here.</b> Open it directly instead: <a href="'+url+'" target="_blank" rel="noopener">'+esc(BKN[rd.b])+' '+rd.c+' (recorded voice, MP3)</a>')};
+ var fail=function(){if(rd.aud!==a)return;rdTtsStop();rdTtsMsg('<b>The recording would not play here.</b> Open it directly instead: <a href="'+url+'" target="_blank" rel="noopener">'+esc(BKN[rd.b])+' '+rd.c+' (recorded voice, MP3)</a>')};
  a.preload='auto';a.playbackRate=rd.tts.rate;
  a.addEventListener('playing',function(){ok=true;clearTimeout(rd.audT);rd.tts.paused=false;rdTtsBar()});
  a.addEventListener('error',fail);
@@ -1046,7 +1046,7 @@ function rdLn(v){var m=/\(([^)]*)\)/.exec(v.langname);return m?m[1]:v.langname}
 function rdTtsOk(){return typeof window.speechSynthesis!=='undefined'&&typeof SpeechSynthesisUtterance!=='undefined'}
 function rdVoices(){try{return speechSynthesis.getVoices()||[]}catch(e){return []}}
 function rdVoicesFor(lang){return rdVoices().filter(function(v){return (v.lang||'').toLowerCase().replace('_','-').split('-')[0]===lang})}
-function rdVoicePick(){var L=rdVerOf(rd.ver).lang,vs=rdVoicesFor(L);if(!vs.length)return null;for(var i=0;i<vs.length;i++)if(vs[i].name===rd.tts.voice)return vs[i];var best=vs.filter(function(v){return v.localService===false||/natural|neural|google|premium|enhanced/i.test(v.name)})[0];return best||vs[0]}
+function rdVoicePick(){var L=rdVerOf(rd.ver).lang,vs=rdVoicesFor(L);if(!vs.length)return null;for(var i=0;i<vs.length;i++)if(vs[i].name===rd.tts.voice)return vs[i];return voiceBest(vs)||vs[0]}
 function rdTtsBar(){var b=$('#rdplay');b.hidden=!rd.tts.on;if(!rd.tts.on)return;$('#rdpp').textContent=rd.tts.paused?'\u25B6':'\u275A\u275A';$('#rdpp').setAttribute('aria-label',rd.tts.paused?'Resume':'Pause');$('#rdpl').textContent=BKN[rd.b]+' '+rd.c+(rd.tts.i>=0?':'+(rd.tts.i+1):'')}
 function rdNow(i){$$('#rdtext .rdv.rdnow').forEach(function(e){e.classList.remove('rdnow')});var e=i>=0?$('#rdtext .rdv[data-v="'+(i+1)+'"]'):null;if(e){e.classList.add('rdnow');try{var r=e.getBoundingClientRect();if(r.top<120||r.bottom>window.innerHeight-170)e.scrollIntoView({block:'center',behavior:'smooth'})}catch(x){}}}
 function rdTtsStop(){rd.ttsTok++;if(rd.aud){try{rd.aud.pause();rd.aud.removeAttribute('src');rd.aud.load()}catch(e){}rd.aud=null}clearTimeout(rd.audT);if(rdTtsOk()){try{speechSynthesis.cancel()}catch(e){}}rd.tts.on=false;rd.tts.paused=false;rd.tts.i=-1;rdNow(-1);rdTtsBar();rdWake(false)}
@@ -1154,7 +1154,9 @@ function srcKeys(as){var m={},arr=[];[].forEach.call(as,function(a){var k=a.text
 function srcApply(scope,kk,skipUnits){[].forEach.call(scope.querySelectorAll('p,li'),function(b){if(b.dataset.al||b.closest('.src,button,figure,blockquote')||b.querySelector('p,li'))return;if(skipUnits&&b.closest('.nwtl>li,.evd'))return;b.dataset.al='1';var used={};[].forEach.call(b.querySelectorAll('a'),function(a){used[a.href]=1});kk.k.forEach(function(k){var url=kk.m[k];if(used[url])return;var w=document.createTreeWalker(b,NodeFilter.SHOW_TEXT),n;while((n=w.nextNode())){if(n.parentNode.closest('a,button'))continue;var v=n.nodeValue,i=v.indexOf(k);while(i>=0&&((i>0&&/[A-Za-z]/.test(v.charAt(i-1)))||/[A-Za-z]/.test(v.charAt(i+k.length)||' ')))i=v.indexOf(k,i+1);if(i<0)continue;var a=document.createElement('a');a.className='isrc';a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=k;var after=n.splitText(i);after.nodeValue=after.nodeValue.slice(k.length);n.parentNode.insertBefore(a,after);used[url]=1;break}})})}
 function srcAuto(root){if(!root)return;[].forEach.call(root.querySelectorAll('.nwtl>li,.evd'),function(u){srcApply(u,srcKeys(u.querySelectorAll('.src a')),false)});srcApply(root,srcKeys(root.querySelectorAll('.src a')),true)}
 function spOk(){return typeof window.speechSynthesis!=='undefined'&&typeof SpeechSynthesisUtterance!=='undefined'}
-function spVoice(){try{var vs=(speechSynthesis.getVoices()||[]).filter(function(v){return /^en/i.test((v.lang||'').replace('_','-'))});if(!vs.length)return null;var b=vs.filter(function(v){return v.localService===false||/natural|neural|google|premium|enhanced/i.test(v.name)})[0];return b||vs[0]}catch(e){return null}}
+function voiceScore(v){var n=v.name||'',x=0;if(/online.*natural|natural/i.test(n))x+=100;if(/neural/i.test(n))x+=90;if(/premium|enhanced|siri/i.test(n))x+=70;if(/google/i.test(n))x+=60;if(v.localService===false)x+=40;if(/\b(en[-_]?(US|GB|AU))\b/i.test(v.lang||''))x+=5;if(/espeak|compact/i.test(n))x-=50;return x}
+function voiceBest(vs){var b=null,bs=-1e9;vs.forEach(function(v){var c=voiceScore(v);if(c>bs){bs=c;b=v}});return b}
+function spVoice(){try{var vs=(speechSynthesis.getVoices()||[]).filter(function(v){return /^en/i.test((v.lang||'').replace('_','-'))});if(!vs.length)return null;return voiceBest(vs)}catch(e){return null}}
 function spFix(t){t=t.replace(/\s+/g,' ').trim();return /[.!?:;”"’)]$/.test(t)?t:t+'.'}
 var SP={tok:0,btn:null,stopb:null,units:[],i:0,paused:false,on:false,rate:1},PK=null;
 var SPR=[0.75,1,1.25,1.5,1.75,2];try{var _r=parseFloat(localStorage.getItem('sp_rate'));if(SPR.indexOf(_r)>=0)SP.rate=_r}catch(e){}
